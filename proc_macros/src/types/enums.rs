@@ -1,15 +1,8 @@
 use crate::types::Attributes;
 use crate::util::extract_doc_lines;
-use darling::ToTokens;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Expr, ItemEnum, Lit};
-
-fn assert_valid_repr(_attributes: &Attributes, item: &ItemEnum) {
-    if !item.attrs.iter().any(|x| x.to_token_stream().to_string().contains("repr")) {
-        panic!("Enum `{}` must have `#[repr()]` annotation.", item.ident);
-    }
-}
+use syn::{Expr, ItemEnum, Lit, Meta, NestedMeta};
 
 fn derive_variant_info(item: ItemEnum, idents: &[Ident], names: &[String], values: &[i32], docs: &[String]) -> TokenStream {
     let name = item.ident.to_string();
@@ -31,10 +24,57 @@ fn derive_variant_info(item: ItemEnum, idents: &[Ident], names: &[String], value
     }
 }
 
+fn find_valid_repr(item: &ItemEnum) -> Option<String> {
+    let valid_reprs = ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "C"];
+    let mut found_repr = false;
+
+    for attr in &item.attrs {
+        if attr.path.is_ident("repr") {
+            found_repr = true;
+            if let Ok(Meta::List(list)) = attr.parse_meta() {
+                for repr in list.nested {
+                    if let NestedMeta::Meta(Meta::Path(path)) = repr {
+                        if let Some(ident) = path.get_ident() {
+                            let repr_str = ident.to_string();
+                            // Check if it's an integer type
+                            if valid_reprs.contains(&repr_str.as_str()) {
+                                return Some(repr_str);
+                            } else if repr_str == "C" {
+                                return None;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if !found_repr {
+        panic!("Enum `{}` must have `#[repr()]` annotation.", item.ident);
+    }
+
+    None
+}
+
 pub fn ffi_type_enum(attributes: &Attributes, input: TokenStream, item: ItemEnum) -> TokenStream {
     let doc_line = extract_doc_lines(&item.attrs).join("\n");
 
-    assert_valid_repr(attributes, &item);
+    // Find the valid repr attribute, if present
+    let primitive_type = find_valid_repr(&item);
+    let ctype_from_string = match primitive_type {
+        Some(type_string) => match type_string.as_str() {
+            "u8" => quote! { Some(::interoptopus::lang::c::PrimitiveType::U8) },
+            "u16" => quote! { Some(::interoptopus::lang::c::PrimitiveType::U16) },
+            "u32" => quote! { Some(::interoptopus::lang::c::PrimitiveType::U32) },
+            "u64" => quote! { Some(::interoptopus::lang::c::PrimitiveType::U64) },
+            "i8" => quote! { Some(::interoptopus::lang::c::PrimitiveType::I8) },
+            "i16" => quote! { Some(::interoptopus::lang::c::PrimitiveType::I16) },
+            "i32" => quote! { Some(::interoptopus::lang::c::PrimitiveType::I32) },
+            "i64" => quote! { Some(::interoptopus::lang::c::PrimitiveType::I64) },
+            _ => quote! { None },
+        },
+        None => quote! { None },
+    };
 
     let span = item.ident.span();
     let name = item.ident.to_string();
@@ -103,13 +143,13 @@ pub fn ffi_type_enum(attributes: &Attributes, input: TokenStream, item: ItemEnum
 
                 let mut variants = ::std::vec::Vec::new();
                 let documentation = ::interoptopus::lang::c::Documentation::from_line(#doc_line);
-                let mut meta = ::interoptopus::lang::c::Meta::with_namespace_documentation(#namespace.to_string(), documentation, None);
+                let mut meta = ::interoptopus::lang::c::Meta::with_namespace_documentation(#namespace.to_string(), documentation);
 
                 #({
                     variants.push(Self::#variant_idents.variant_info());
                 })*
 
-                let rval = ::interoptopus::lang::c::EnumType::new(#ffi_name.to_string(), variants, meta);
+                let rval = ::interoptopus::lang::c::EnumType::new(#ffi_name.to_string(), variants, #ctype_from_string, meta);
 
                 #ctype_info_return
             }

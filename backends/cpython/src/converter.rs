@@ -37,7 +37,7 @@ impl Converter {
                 CType::Primitive(PrimitiveType::Void) => "ctypes.c_void_p".to_string(),
                 _ => format!("ctypes.POINTER({})", self.to_ctypes_name(x, true)),
             },
-            CType::Enum(_) => "ctypes.c_int".to_string(), // is this correct?
+            CType::Enum(x) => x.rust_name().to_string(),
             CType::Composite(x) => x.rust_name().to_string(),
             CType::Pattern(x) => match x {
                 TypePattern::AsciiPointer => "bytes".to_string(),
@@ -66,24 +66,29 @@ impl Converter {
         }
     }
 
+    pub fn to_ctypes_primitive_name(&self, the_type: &PrimitiveType) -> String
+    {
+        match the_type {
+            PrimitiveType::Void => "".to_string(),
+            PrimitiveType::Bool => "ctypes.c_bool".to_string(),
+            PrimitiveType::U8 => "ctypes.c_uint8".to_string(),
+            PrimitiveType::U16 => "ctypes.c_uint16".to_string(),
+            PrimitiveType::U32 => "ctypes.c_uint32".to_string(),
+            PrimitiveType::U64 => "ctypes.c_uint64".to_string(),
+            PrimitiveType::I8 => "ctypes.c_int8".to_string(),
+            PrimitiveType::I16 => "ctypes.c_int16".to_string(),
+            PrimitiveType::I32 => "ctypes.c_int32".to_string(),
+            PrimitiveType::I64 => "ctypes.c_int64".to_string(),
+            PrimitiveType::F32 => "ctypes.c_float".to_string(),
+            PrimitiveType::F64 => "ctypes.c_double".to_string(),
+        }
+    }
+
     #[allow(clippy::only_used_in_recursion)]
     pub fn to_ctypes_name(&self, the_type: &CType, with_type_annotations: bool) -> String {
         match the_type {
-            CType::Primitive(x) => match x {
-                PrimitiveType::Void => "".to_string(),
-                PrimitiveType::Bool => "ctypes.c_bool".to_string(),
-                PrimitiveType::U8 => "ctypes.c_uint8".to_string(),
-                PrimitiveType::U16 => "ctypes.c_uint16".to_string(),
-                PrimitiveType::U32 => "ctypes.c_uint32".to_string(),
-                PrimitiveType::U64 => "ctypes.c_uint64".to_string(),
-                PrimitiveType::I8 => "ctypes.c_int8".to_string(),
-                PrimitiveType::I16 => "ctypes.c_int16".to_string(),
-                PrimitiveType::I32 => "ctypes.c_int32".to_string(),
-                PrimitiveType::I64 => "ctypes.c_int64".to_string(),
-                PrimitiveType::F32 => "ctypes.c_float".to_string(),
-                PrimitiveType::F64 => "ctypes.c_double".to_string(),
-            },
-            CType::Enum(_) => "ctypes.c_int".to_string(), // is this correct?
+            CType::Primitive(x) => self.to_ctypes_primitive_name(x),
+            CType::Enum(x) => x.rust_name().to_string(),
             CType::Composite(x) => x.rust_name().to_string(),
             CType::Array(x) => format!("{} * {}", self.to_ctypes_name(x.array_type(), with_type_annotations), x.len()),
             CType::Opaque(_) => "ERROR".to_string(),

@@ -315,12 +315,13 @@ impl ArrayType {
 pub struct EnumType {
     name: String,
     variants: Vec<Variant>,
+    primitive_type: Option<PrimitiveType>,
     meta: Meta,
 }
 
 impl EnumType {
-    pub fn new(name: String, variants: Vec<Variant>, meta: Meta) -> Self {
-        Self { name, variants, meta }
+    pub fn new(name: String, variants: Vec<Variant>, primitive_type: Option<PrimitiveType>, meta: Meta) -> Self {
+        Self { name, variants, primitive_type, meta }
     }
 
     pub fn rust_name(&self) -> &str {
@@ -337,6 +338,10 @@ impl EnumType {
 
     pub fn meta(&self) -> &Meta {
         &self.meta
+    }
+
+    pub fn primitive_type(&self) -> Option<PrimitiveType> {
+        self.primitive_type
     }
 }
 
@@ -384,18 +389,19 @@ impl Variant {
 pub struct CompositeType {
     name: String,
     fields: Vec<Field>,
+    pack: Option<usize>,
     meta: Meta,
 }
 
 impl CompositeType {
     /// Creates a new composite with the given name and fields and no documentation.
     pub fn new(name: String, fields: Vec<Field>) -> Self {
-        Self::with_meta(name, fields, Meta::new())
+        Self::with_meta(name, fields, None, Meta::new())
     }
 
     /// Creates a new composite with the given name and type-level documentation.
-    pub fn with_meta(name: String, fields: Vec<Field>, meta: Meta) -> Self {
-        Self { name, fields, meta }
+    pub fn with_meta(name: String, fields: Vec<Field>, pack: Option<usize>, meta: Meta) -> Self {
+        Self { name, fields, pack, meta }
     }
 
     /// Gets the type's name `
@@ -415,6 +421,11 @@ impl CompositeType {
     pub fn meta(&self) -> &Meta {
         &self.meta
     }
+
+    pub fn pack(&self) -> Option<usize> {
+        self.pack
+    }
+
 }
 
 /// Doesn't exist in C, but other languages can benefit from accidentally using 'private' fields.
@@ -490,7 +501,6 @@ impl OpaqueType {
 pub struct Meta {
     documentation: Documentation,
     namespace: String,
-    alignment: Option<usize>,
 }
 
 impl Meta {
@@ -498,16 +508,12 @@ impl Meta {
         Self::default()
     }
 
-    pub fn with_namespace_documentation(namespace: String, documentation: Documentation, alignment: Option<usize>) -> Self {
-        Self {
-            documentation,
-            namespace,
-            alignment,
-        }
+    pub fn with_namespace_documentation(namespace: String, documentation: Documentation) -> Self {
+        Self { documentation, namespace }
     }
 
-    pub fn with_documentation(documentation: Documentation, alignment: Option<usize>) -> Self {
-        Self::with_namespace_documentation(String::new(), documentation, alignment)
+    pub fn with_documentation(documentation: Documentation) -> Self {
+        Self::with_namespace_documentation(String::new(), documentation)
     }
 
     pub fn documentation(&self) -> &Documentation {
@@ -523,9 +529,6 @@ impl Meta {
         self.namespace == namespace
     }
 
-    pub fn alignment(&self) -> Option<usize> {
-        self.alignment
-    }
 }
 
 /// A named, exported `#[no_mangle] extern "C" fn f()` function.

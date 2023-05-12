@@ -337,7 +337,16 @@ pub trait CSharpWriter {
         if write_for == WriteFor::Code {
             self.write_documentation(w, the_type.meta().documentation())?;
         }
-        indented!(w, r#"public enum {}"#, the_type.rust_name())?;
+        let primitive_type = the_type.primitive_type();
+        if let Some(primitive_type) = primitive_type{
+            let type_name = self.converter().primitive_to_typename(&primitive_type);
+            indented!(w, r#"public enum {} : {}"#, the_type.rust_name(), type_name)?;
+
+        }
+        else {
+            indented!(w, r#"public enum {}"#, the_type.rust_name())?;
+        }
+        
         indented!(w, r#"{{"#)?;
         w.indent();
 
@@ -367,7 +376,7 @@ pub trait CSharpWriter {
 
     fn write_type_definition_composite_annotation(&self, w: &mut IndentWriter, the_type: &CompositeType) -> Result<(), Error> {
         indented!(w, r#"[Serializable]"#)?;
-        let alignment = the_type.meta().alignment();
+        let alignment = the_type.pack();
         if let Some(align) = alignment {
             indented!(w, r#"[StructLayout(LayoutKind.Sequential, Pack = {})]"#, align)
         } else {

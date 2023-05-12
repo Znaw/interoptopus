@@ -109,7 +109,7 @@ pub trait PythonWriter {
             indented!(w, [_], r#""""{}""""#, documentation)?;
         }
 
-        let alignment = c.meta().alignment();
+        let alignment = c.pack();
         if let Some(align) = alignment {
             indented!(w, [_], r#"_pack_ = {}"#, align)?;
         }
@@ -192,7 +192,14 @@ pub trait PythonWriter {
     fn write_enum(&self, w: &mut IndentWriter, e: &EnumType, write_for: WriteFor) -> Result<(), Error> {
         let documentation = e.meta().documentation().lines().join("\n");
 
-        indented!(w, r#"class {}:"#, e.rust_name())?;
+        if let Some(primitive_type) = e.primitive_type() {
+            let primitive_type_name = self.converter().to_ctypes_primitive_name(&primitive_type);
+            indented!(w, r#"class {}({}):"#, e.rust_name(), primitive_type_name)?;
+        }
+        else {
+            indented!(w, r#"class {}:(ctypes.c_int)"#, e.rust_name())?;
+        }
+
         if !documentation.is_empty() && write_for == WriteFor::Code {
             indented!(w, [_], r#""""{}""""#, documentation)?;
         }

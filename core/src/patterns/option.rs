@@ -145,8 +145,8 @@ where
         ];
 
         let doc = Documentation::from_line("Option type containing boolean flag and maybe valid data.");
-        let meta = Meta::with_namespace_documentation(T::type_info().namespace().map(|e| e.into()).unwrap_or_else(String::new), doc, None);
-        let composite = CompositeType::with_meta(format!("Option{}", T::type_info().name_within_lib()), fields, meta);
+        let meta = Meta::with_namespace_documentation(T::type_info().namespace().map(|e| e.into()).unwrap_or_else(String::new), doc);
+        let composite = CompositeType::with_meta(format!("Option{}", T::type_info().name_within_lib()), fields, None, meta);
         CType::Pattern(TypePattern::Option(composite))
     }
 }

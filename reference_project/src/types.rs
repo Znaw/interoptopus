@@ -223,10 +223,31 @@ pub struct Packed1 {
 }
 
 #[ffi_type]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Default)]
+pub enum PrimitiveEnum {
+    #[default]
+    AA,
+    BB,
+    CC,
+}
+
+#[ffi_type]
+#[repr(i16)]
+#[derive(Copy, Clone, Debug, Default)]
+pub enum PrimitiveNegativeEnum2 {
+    AAA = 1,
+    #[default]
+    BBB = 0,
+    CCC = 2,
+}
+
+#[ffi_type]
 #[repr(C, packed)]
 pub struct Packed2 {
-    pub x: u8,
-    pub y: u16,
+    pub x: PrimitiveEnum,
+    pub y: PrimitiveNegativeEnum2,
+    pub z: i8,
 }
 
 #[ffi_type]

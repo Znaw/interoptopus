@@ -107,6 +107,10 @@ pub fn ffi_inventory() -> Inventory {
             .register(constant!(constants::COMPUTED_I32))
             // Extra Types
             .register(extra_type!(types::ExtraType<f32>))
+            .register(extra_type!(types::Packed1))
+            .register(extra_type!(types::Packed2))
+            .register(extra_type!(types::Align1))
+            .register(extra_type!(types::Align2))
             // Patterns
             .register(pattern!(patterns::service::SimpleService))
             .register(pattern!(patterns::service::SimpleServiceLifetime))
