@@ -321,7 +321,12 @@ pub struct EnumType {
 
 impl EnumType {
     pub fn new(name: String, variants: Vec<Variant>, primitive_type: Option<PrimitiveType>, meta: Meta) -> Self {
-        Self { name, variants, primitive_type, meta }
+        Self {
+            name,
+            variants,
+            primitive_type,
+            meta,
+        }
     }
 
     pub fn rust_name(&self) -> &str {
@@ -349,12 +354,12 @@ impl EnumType {
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Variant {
     name: String,
-    value: usize,
+    value: i64,
     documentation: Documentation,
 }
 
 impl Variant {
-    pub fn new(name: String, value: usize, documentation: Documentation) -> Self {
+    pub fn new(name: String, value: i64, documentation: Documentation) -> Self {
         Self { name, value, documentation }
     }
 
@@ -362,7 +367,7 @@ impl Variant {
         &self.name
     }
 
-    pub fn value(&self) -> usize {
+    pub fn value(&self) -> i64 {
         self.value
     }
 
@@ -425,7 +430,6 @@ impl CompositeType {
     pub fn pack(&self) -> Option<usize> {
         self.pack
     }
-
 }
 
 /// Doesn't exist in C, but other languages can benefit from accidentally using 'private' fields.
@@ -528,7 +532,6 @@ impl Meta {
     pub fn is_namespace(&self, namespace: &str) -> bool {
         self.namespace == namespace
     }
-
 }
 
 /// A named, exported `#[no_mangle] extern "C" fn f()` function.

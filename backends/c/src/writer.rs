@@ -370,20 +370,19 @@ pub trait CWriter {
             _ => {
                 let field_name = field.name();
                 let (type_name, type_original) = match field.the_type() {
-                    CType::Enum(x) => 
-                    {
-                        if let Some(primitive_type) = x.primitive_type()
-                        {
-                            (self.converter().primitive_to_typename(&primitive_type), format!(" // {}", self.converter().enum_to_typename(&x)))
-                        }
-                        else
-                        {
-                            (self.converter().enum_to_typename(&x) , String::new())
+                    CType::Enum(x) => {
+                        if let Some(primitive_type) = x.primitive_type() {
+                            (
+                                self.converter().primitive_to_typename(&primitive_type),
+                                format!(" // {}", self.converter().enum_to_typename(&x)),
+                            )
+                        } else {
+                            (self.converter().enum_to_typename(&x), String::new())
                         }
                     }
                     _ => (self.converter().to_type_specifier(field.the_type()), String::new()),
                 };
-                
+
                 indented!(w, r#"{} {};{}"#, type_name, field_name, type_original)
             }
         }

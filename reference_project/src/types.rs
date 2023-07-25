@@ -239,7 +239,9 @@ pub enum PrimitiveNegativeEnum2 {
     AAA = 1,
     #[default]
     BBB = 0,
-    CCC = 2,
+    CCC = -1,
+    DDD = 0x7FFF,
+    EEE = -0x2,
 }
 
 #[ffi_type]

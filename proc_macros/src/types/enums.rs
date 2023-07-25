@@ -2,9 +2,9 @@ use crate::types::Attributes;
 use crate::util::extract_doc_lines;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Expr, ItemEnum, Lit, Meta, NestedMeta};
+use syn::{Expr, ExprLit, ExprUnary, ItemEnum, Lit, Meta, NestedMeta, UnOp};
 
-fn derive_variant_info(item: ItemEnum, idents: &[Ident], names: &[String], values: &[i32], docs: &[String]) -> TokenStream {
+fn derive_variant_info(item: ItemEnum, idents: &[Ident], names: &[String], values: &[i64], docs: &[String]) -> TokenStream {
     let name = item.ident.to_string();
     let name_ident = syn::Ident::new(&name, item.ident.span());
 
@@ -15,7 +15,7 @@ fn derive_variant_info(item: ItemEnum, idents: &[Ident], names: &[String], value
                     #(
                        Self::#idents => {
                             let documentation = ::interoptopus::lang::c::Documentation::from_line(#docs);
-                            ::interoptopus::lang::c::Variant::new(#names.to_string(), #values as usize, documentation)
+                            ::interoptopus::lang::c::Variant::new(#names.to_string(), #values, documentation)
                        },
                     )*
                 }
@@ -56,6 +56,19 @@ fn find_valid_repr(item: &ItemEnum) -> Option<String> {
     None
 }
 
+fn find_lit_int(expr: &Expr) -> Option<i64> {
+    match expr {
+        Expr::Lit(ExprLit { lit: Lit::Int(int), .. }) => Some(int.base10_parse().unwrap()),
+        Expr::Unary(ExprUnary { expr, op: UnOp::Neg(_), .. }) => {
+            match find_lit_int(expr) {
+                Some(int) => Some(-int), // Change the sign
+                None => None,
+            }
+        }
+        _ => None,
+    }
+}
+
 pub fn ffi_type_enum(attributes: &Attributes, input: TokenStream, item: ItemEnum) -> TokenStream {
     let doc_line = extract_doc_lines(&item.attrs).join("\n");
 
@@ -92,17 +105,12 @@ pub fn ffi_type_enum(attributes: &Attributes, input: TokenStream, item: ItemEnum
         let ident = variant.ident.to_string();
         let variant_doc_line = extract_doc_lines(&variant.attrs).join("\n");
 
-        let this_id = if let Some((_, e)) = &variant.discriminant {
-            match e {
-                Expr::Lit(e) => match &e.lit {
-                    Lit::Int(x) => {
-                        let number = x.base10_parse().expect("Must be number");
-                        next_id = number + 1;
-                        number
-                    }
-                    _ => panic!("Unknown token."),
-                },
-                _ => panic!("Unknown token."),
+        let this_id = if let Some((_, expr)) = &variant.discriminant {
+            if let Some(id) = find_lit_int(expr) {
+                next_id = id + 1;
+                id
+            } else {
+                panic!("Invalid expression.");
             }
         } else {
             let id = next_id;

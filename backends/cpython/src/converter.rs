@@ -66,8 +66,7 @@ impl Converter {
         }
     }
 
-    pub fn to_ctypes_primitive_name(&self, the_type: &PrimitiveType) -> String
-    {
+    pub fn to_ctypes_primitive_name(&self, the_type: &PrimitiveType) -> String {
         match the_type {
             PrimitiveType::Void => "".to_string(),
             PrimitiveType::Bool => "ctypes.c_bool".to_string(),

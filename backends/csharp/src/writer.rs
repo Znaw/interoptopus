@@ -338,15 +338,13 @@ pub trait CSharpWriter {
             self.write_documentation(w, the_type.meta().documentation())?;
         }
         let primitive_type = the_type.primitive_type();
-        if let Some(primitive_type) = primitive_type{
+        if let Some(primitive_type) = primitive_type {
             let type_name = self.converter().primitive_to_typename(&primitive_type);
             indented!(w, r#"public enum {} : {}"#, the_type.rust_name(), type_name)?;
-
-        }
-        else {
+        } else {
             indented!(w, r#"public enum {}"#, the_type.rust_name())?;
         }
-        
+
         indented!(w, r#"{{"#)?;
         w.indent();
 
