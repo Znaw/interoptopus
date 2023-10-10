@@ -1,9 +1,13 @@
+use crate::Config;
 use interoptopus::lang::c::{CType, ConstantValue, Documentation, FnPointerType, PrimitiveType, PrimitiveValue};
 use interoptopus::patterns::TypePattern;
 use std::ops::Deref;
 
 /// Maps CType constructs to Pythonic constructs.
-pub struct Converter {}
+#[derive(Clone)]
+pub struct Converter {
+    pub(crate) config: Config,
+}
 
 impl Converter {
     pub fn documentation(&self, documentation: &Documentation) -> String {

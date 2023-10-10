@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::{Config, ToNamingStyle};
 use crate::converter::Converter;
 use interoptopus::lang::c::{CType, CompositeType, EnumType, Function, PrimitiveType};
 use interoptopus::patterns::service::Service;
@@ -209,7 +209,8 @@ pub trait PythonWriter {
                     indented!(w, [_], r#"# {}"#, line)?;
                 }
             }
-            indented!(w, [_], r#"{} = {}"#, v.name(), v.value())?;
+            let variant_name = v.name().to_naming_style(&self.converter().config.enum_variant_naming);
+            indented!(w, [_], r#"{} = {}"#, variant_name, v.value())?;
         }
 
         Ok(())

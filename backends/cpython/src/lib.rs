@@ -143,7 +143,7 @@ mod docs;
 mod testing;
 mod writer;
 
-pub use config::{Config, DocConfig};
+pub use config::{Config, DocConfig, PythonNamingStyle};
 pub use converter::Converter;
 pub use docs::DocGenerator;
 pub use testing::run_python_if_installed;
@@ -159,9 +159,9 @@ pub struct Generator {
 impl Generator {
     pub fn new(config: Config, library: Inventory) -> Self {
         Self {
-            config,
+            config: config.clone(),
             library,
-            converter: Converter {},
+            converter: Converter {config},
         }
     }
 }
