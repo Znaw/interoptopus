@@ -422,9 +422,9 @@ pub trait CSharpWriter {
                 }
 
                 let type_name = self.converter().to_typespecifier_in_field(a.array_type(), field, the_type);
-                for i in 0..a.len() {
-                    indented!(w, r#"{}{} {}{};"#, visibility, type_name, field_name, i)?;
-                }
+                
+                indented!(w, r#"[MarshalAs(UnmanagedType.ByValArray, SizeConst = {})]"#, a.len())?;
+                indented!(w, r#"{}{}[] {};"#, visibility, type_name, field_name)?;
 
                 Ok(())
             }
